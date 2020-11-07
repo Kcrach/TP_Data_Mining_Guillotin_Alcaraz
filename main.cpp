@@ -9,7 +9,7 @@ typedef std::pair<std::string, int> Pattern;
 typedef std::vector<std::pair<std::string, int>> PatternVector;
 
 bool contain_pattern(const std::string &, const std::string &);
-void init_patterns(std::vector<std::string>, PatternVector &);
+void init_patterns(const std::vector<std::string> &, PatternVector &);
 bool pattern_exist(const std::string &, const PatternVector &);
 void display_freq_pattern(const std::vector<std::pair<std::string, int>> &);
 int count_pattern_in_transitions(const std::vector<std::string> &,
@@ -24,7 +24,7 @@ int main() {
     std::vector<std::string> transitions;
     PatternVector freq_pattern;
 
-    /*std::string t1 = "DEF";
+    std::string t1 = "DEF";
     std::string t2 = "BCE";
     std::string t3 = "ABCE";
     std::string t4 = "BCE";
@@ -36,11 +36,11 @@ int main() {
     transitions.push_back(t3);
     transitions.push_back(t4);
     transitions.push_back(t5);
-    transitions.push_back(t6);*/
+    transitions.push_back(t6);
 
     bool VERBOSE = true;
 
-    transitions = generate_transitions("ABCDEFGHIJ", 5000);
+    //transitions = generate_transitions("ABCDEFGHIJ", 5000);
 
     std::chrono::time_point<std::chrono::system_clock> start_t, end_t; // chrono
     start_t = std::chrono::system_clock::now();
@@ -95,8 +95,8 @@ bool contain_pattern(const std::string & transition,
         return false;
     }
 
-    for (int i = 0; i < pattern.size(); i++) {
-        if (transition.find(pattern.at(i)) == std::string::npos) {
+    for (unsigned i(0); i < pattern.size(); ++i) {
+        if (transition.find(pattern[i]) == std::string::npos) {
             return false;
         }
     }
@@ -105,29 +105,30 @@ bool contain_pattern(const std::string & transition,
 }
 
 //Function to init patterns with size 1 (A,B,C,D....)
-void init_patterns(std::vector<std::string> transitions,
+void init_patterns(const std::vector<std::string> & transitions,
                    PatternVector & freq_pattern) {
-    for (int i(0); i < transitions.size(); ++i) {
-        for (int j(0); j < transitions[i].size(); ++j) {
-            std::string p;
-            std::stringstream ss;
-            ss << transitions[i][j];
-            ss >> p;
+    for (const std::string & transition: transitions) {
+        for (char c: transition) {
+            std::string p(1, c);
             if (!pattern_exist(p, freq_pattern)) {
-                Pattern tmp (p, 0);
-                freq_pattern.push_back(tmp);
+                freq_pattern.push_back(Pattern(p, 0));
             }
         }
     }
 
-    std::sort(freq_pattern.begin(), freq_pattern.end());
+    std::sort(freq_pattern.begin(),
+                  freq_pattern.end(),
+                  [](const Pattern & a, const Pattern & b) {
+                      return a.first.size() == b.first.size()?
+                      a.first < b.first: a.first.size() < b.first.size();
+                  });
 }
 
 //Check if a pattern is already in the std::vector freq_pattern
 bool pattern_exist(const std::string & pattern,
                    const PatternVector & freq_pattern) {
-    for (int i = 0; i < freq_pattern.size(); i++) {
-        if(freq_pattern.at(i).first == pattern) {
+    for (Pattern p: freq_pattern) {
+        if(p.first == pattern) {
             return true;
         }
     }
@@ -137,7 +138,7 @@ bool pattern_exist(const std::string & pattern,
 
 //Display the std::vector freq_pattern
 void display_freq_pattern(const PatternVector & freq_pattern){
-    for (int i = 0; i < freq_pattern.size(); ++i) {
+    for (unsigned i(0); i < freq_pattern.size(); ++i) {
         std::cout << freq_pattern.at(i).first
         << " : " << freq_pattern.at(i).second << std::endl;
     }
@@ -157,14 +158,14 @@ int count_pattern_in_transitions(const std::vector<std::string> & transitions,
 PatternVector find_frequent_patterns(const std::vector<std::string> & transitions,
                                      const PatternVector & freq_pattern,
                                      int minsup) {
-    PatternVector tmp = freq_pattern;
-    PatternVector result = freq_pattern;
+    PatternVector tmp(freq_pattern);
+    PatternVector result(freq_pattern);
     //First init the std::vector
     init_patterns(transitions, tmp);
     int cpt;
-    while (tmp.size() >= 1) {
+    while (!tmp.empty()) {
         std::vector<bool> ignore(tmp.size(), false);
-        for (int i(0); i < tmp.size(); ++i) {
+        for (unsigned i(0); i < tmp.size(); ++i) {
             cpt = count_pattern_in_transitions(transitions, tmp[i].first);
             if (cpt >= minsup) {
                 tmp[i].second = cpt;
@@ -173,7 +174,7 @@ PatternVector find_frequent_patterns(const std::vector<std::string> & transition
             }
         }
         PatternVector new_tmp;
-        for (int i(0); i < tmp.size(); ++i) {
+        for (unsigned i(0); i < tmp.size(); ++i) {
             if (!ignore[i]) {
                 new_tmp.push_back(tmp[i]);
             }
@@ -188,9 +189,9 @@ PatternVector find_frequent_patterns(const std::vector<std::string> & transition
 
 //Merge pattern
 PatternVector merge_freq_pattern(const PatternVector & freq_pattern_tmp) {
-    int size_v = freq_pattern_tmp.size();
+    int size_v(freq_pattern_tmp.size());
     PatternVector result(freq_pattern_tmp);
-    if (result.size() == 0) {
+    if (result.empty()) {
         return result;
     }
     if (result[0].first.size() == 1) { //Pattern with one char (first round)
