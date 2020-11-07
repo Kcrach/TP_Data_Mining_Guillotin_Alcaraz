@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1604747117 source:d:\masterlyon\m2\s1\datamining\tpplantevit\tpplantevit\main.cpp
+	<iostream>
+	<vector>
+	<string>
+	<sstream>
+	<algorithm>
+
