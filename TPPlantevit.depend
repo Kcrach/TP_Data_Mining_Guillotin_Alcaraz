@@ -14,3 +14,13 @@
 	<algorithm>
 	<chrono>
 
+1605025799 source:d:\masterlyon\m2\s1\datamining\tpplantevit\tp_data_mining_guillotin_alcaraz\main.cpp
+	<iostream>
+	<vector>
+	<string>
+	<sstream>
+	<algorithm>
+	<chrono>
+	<cmath>
+	<random>
+
