@@ -30,6 +30,7 @@ int main() {
     int minsup = 2;
     std::vector<std::string> transitions;
     PatternVector freq_pattern;
+    PatternVector sample_frequency;
 
     std::string t1 = "DEF";
     std::string t2 = "BCE";
@@ -69,19 +70,8 @@ int main() {
     std::cout << "Execution time: " << elapsed_ms << "ms" << std::endl;
 
     //Test algo 1
-    /*
-    std::vector<std::pair<std::string, int>> weights;
-    weights = calc_weight_transitions(transitions);
-
-    for (int i = 0; i < weights.size(); i++) {
-        std::cout << weights[i].first << " : " << weights[i].second << std::endl;
-    }*/
-
-    /*for (int i = 0; i < 10; i++) {
-        std::cout << choose_transition(weights) << std::endl;
-    }*/
-
-    sampling_frequency(transitions);
+    sample_frequency = sampling_frequency(transitions);
+    display_freq_pattern(sample_frequency);
 }
 
 
@@ -122,12 +112,31 @@ PatternVector sampling_frequency(const std::vector<std::string> & transitions) {
     std::vector<std::pair<std::string, int>> weights;
     weights = calc_weight_transitions(transitions);
 
+    PatternVector sample;
+    bool exist = false;
+
     for (int i = 0; i < transitions.size(); i++) {
         std::string choosen_t = choose_transition(weights);
-        std::cout << choose_subset_pattern(choosen_t) << std::endl;
+        std::string subset_choosen_t = choose_subset_pattern(choosen_t);
+        for (int j = 0; j < sample.size(); j++) {
+            if (sample[j].first == subset_choosen_t) {
+                sample[j].second++;
+                exist = true;
+                break;
+            }
+        }
+        if (exist == false) {
+            std::pair<std::string, int> p (subset_choosen_t, 1);
+            sample.push_back(p);
+        } else {
+            exist = false;
+        }
     }
+
+    return sample;
 }
 
+//Algorithm 1 : Choose uniformaly a subset pattern of a transition
 std::string choose_subset_pattern(std::string pattern) {
     std::vector<std::string> possible_patterns;
 
