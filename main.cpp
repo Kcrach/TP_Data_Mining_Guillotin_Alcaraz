@@ -25,6 +25,9 @@ std::string choose_transition(PatternVector);
 std::string choose_subset_pattern(std::string);
 PatternVector sampling_frequency(const std::vector<std::string> &);
 PatternVector count_frequency_sample(PatternVector &);
+PatternVector calc_weight_transitions_2(const std::vector<std::string> &);
+int draw_k (std::string);
+PatternVector sampling_area(const std::vector<std::string> &);
 int rng(int);
 
 int main() {
@@ -32,6 +35,7 @@ int main() {
     std::vector<std::string> transitions;
     PatternVector freq_pattern;
     PatternVector sample_frequency;
+    PatternVector sample_area;
 
     std::string t1 = "DEF";
     std::string t2 = "BCE";
@@ -72,11 +76,18 @@ int main() {
 
     //Test algo 1
     sample_frequency = sampling_frequency(transitions);
-    count_frequency_sample(sample_frequency);
-    std::cout << std::endl;
     display_freq_pattern(sample_frequency);
-}
+    std::cout << std::endl;
 
+    //Test algo 2
+    sample_area = sampling_area(transitions);
+    display_freq_pattern(sample_area);
+
+    //Test Q3
+    /*std::cout << std::endl;
+    count_frequency_sample(sample_frequency);*/
+
+}
 
 //Algorithm 1 : Sampling by frequency, step 1 : calc weight
 PatternVector calc_weight_transitions(const std::vector<std::string> & transitions) {
@@ -91,7 +102,7 @@ PatternVector calc_weight_transitions(const std::vector<std::string> & transitio
     return weights;
 }
 
-//Algorithm 1 : Sampling by frequency, step 2 : Choose a transition
+//Algorithm 1 & 2: Sampling by frequency, step 2 : Choose a transition
 std::string choose_transition(PatternVector w) {
     int total_weight = 0;
 
@@ -139,6 +150,107 @@ PatternVector sampling_frequency(const std::vector<std::string> & transitions) {
     return sample;
 }
 
+//Algorithm 1 : Choose uniformaly a subset pattern of a transition
+std::string choose_subset_pattern(std::string pattern) {
+    std::string choosen_subset = "";
+
+    while (choosen_subset.size() == 0) {
+        for (int i = 0; i < pattern.size(); i++) {
+            int r = rng(2);
+            if (r == 0 && choosen_subset.find(pattern[i]) == std::string::npos) {
+                choosen_subset.push_back(pattern[i]);
+            }
+        }
+    }
+
+    std::sort(choosen_subset.begin(), choosen_subset.end());
+
+    return choosen_subset;
+}
+
+//Algorithm 2 : Sampling by area, step 1 : calc weight
+PatternVector calc_weight_transitions_2(const std::vector<std::string> & transitions) {
+    PatternVector weights;
+
+    for (int i = 0; i < transitions.size(); i++) {
+        int tmp = transitions[i].size() * pow(2, transitions[i].size() - 1);
+        std::pair<std::string, int> p (transitions[i], tmp);
+        weights.push_back(p);
+    }
+
+    return weights;
+}
+
+//Algorithm 2 : Sampling by area, step 3 : draw k
+int draw_k (std::string choosen_t) {
+    std::vector<int> id;
+    int total = 0;
+
+    for (int i = 1; i < choosen_t.size()+1; i++) {
+        id.push_back(i);
+        total += i;
+    }
+
+    int r = rng(total) + 1;
+    int p = 0;
+
+    for (int i =0 ; i < id.size(); i++) {
+        p += id[i];
+        if (p >= r) {
+            return id[i];
+        }
+    }
+}
+
+//Algorithm 2 : Choose uniformaly a subset pattern of size k into the transition
+std::string choose_subset_pattern_2(std::string pattern, int k) {
+    std::string choosen_subset = "";
+
+    while (choosen_subset.size() < k) {
+        for (int i = 0; i < pattern.size(); i++) {
+            int r = rng(2);
+            if (r == 0 && choosen_subset.find(pattern[i]) == std::string::npos) {
+                choosen_subset.push_back(pattern[i]);
+            }
+        }
+    }
+
+    std::sort(choosen_subset.begin(), choosen_subset.end());
+
+    return choosen_subset;
+}
+
+//Algorithm 2 : Sampling by area, step 3 : make the final set
+PatternVector sampling_area(const std::vector<std::string> & transitions) {
+    PatternVector weights;
+    weights = calc_weight_transitions_2(transitions);
+
+    PatternVector sample;
+    bool exist = false;
+
+    for (int i = 0; i < transitions.size(); i++) {
+        std::string choosen_t = choose_transition(weights);
+        int k = draw_k(choosen_t);
+        std::string subset_choosen_t = choose_subset_pattern_2(choosen_t, k);
+        for (int j = 0; j < sample.size(); j++) {
+            if (sample[j].first == subset_choosen_t) {
+                sample[j].second++;
+                exist = true;
+                break;
+            }
+        }
+        if (exist == false) {
+            Pattern p (subset_choosen_t, 1);
+            sample.push_back(p);
+        } else {
+            exist = false;
+        }
+    }
+
+    return sample;
+}
+
+//Q3 : Count frequency of a sample
 PatternVector count_frequency_sample(PatternVector & s) {
     PatternVector result;
     for (int i = 0; i < s.size(); i++) {
@@ -177,52 +289,6 @@ PatternVector count_frequency_sample(PatternVector & s) {
     }
 
     display_freq_pattern(result);
-}
-
-
-//Algorithm 1 : Choose uniformaly a subset pattern of a transition
-std::string choose_subset_pattern(std::string pattern) {
-    std::vector<std::string> possible_patterns;
-
-    for (int i = 0; i < pattern.size(); i++) {
-        std::string s(1,pattern[i]);
-        possible_patterns.push_back(s);
-    }
-
-    std::sort(possible_patterns.begin(),
-                possible_patterns.end());
-
-    for (int i = 0; i < possible_patterns.size(); i++) {
-        for (int j = i+1; j < possible_patterns.size(); j++) {
-            std::string new_tmp = "";
-            if (possible_patterns[i].size() == possible_patterns[j].size()
-                    && possible_patterns[i].size() == 1) {
-                new_tmp = possible_patterns[i] + possible_patterns[j];
-            } else if (possible_patterns[i].size() == possible_patterns[j].size()
-                        && possible_patterns[i].size() > 1) {
-                std::string tmp1 = possible_patterns[i];
-                tmp1.pop_back();
-
-                std::string tmp2 = possible_patterns[j];
-                tmp2.pop_back();
-
-                if (tmp1 == tmp2) {
-                    new_tmp = possible_patterns[i] + possible_patterns[j][possible_patterns[j].size() - 1];
-                }
-            }
-
-            if (new_tmp != "") {
-                possible_patterns.push_back(new_tmp);
-            }
-
-            if (new_tmp == pattern) {
-                break;
-            }
-        }
-    }
-
-    int r = rng(possible_patterns.size() - 1);
-    return possible_patterns[r];
 }
 
 std::vector<std::string> generate_transitions(const std::string & symbols,
