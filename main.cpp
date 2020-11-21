@@ -21,12 +21,12 @@ std::vector<std::string> generate_transitions(const std::string &, int);
 PatternVector calc_weight_transitions(const std::vector<Transition> &);
 Transition choose_transition(PatternVector);
 Transition choose_subset_pattern(Transition);
-PatternVector sampling_frequency(const std::vector<Transition> &);
+PatternVector sampling_frequency(const std::vector<Transition> &, int);
 void count_frequency_sample(PatternVector &, std::vector<Transition>);
 void count_area_sample(PatternVector &, std::vector<Transition>);
 PatternVector calc_weight_transitions_2(const std::vector<Transition> &);
 int draw_k (std::string);
-PatternVector sampling_area(const std::vector<Transition> &);
+PatternVector sampling_area(const std::vector<Transition> &, int);
 std::vector<Transition> convert_file_in_dataset(std::string);
 int rng(int);
 
@@ -82,15 +82,16 @@ int main() {
             display_freq_pattern(sample_area);*/
 
             //Q4
-            transitions = convert_file_in_dataset("mushrooms.txt");
+            //transitions = convert_file_in_dataset("mushrooms.txt");
+            transitions = convert_file_in_dataset("BMS.txt");
 
-            /*sample_frequency = sampling_frequency(transitions);
+            sample_frequency = sampling_frequency(transitions, 1);
             count_frequency_sample(sample_frequency, transitions);
-            display_freq_pattern(sample_frequency);*/
+            display_freq_pattern(sample_frequency);
 
-            sample_area = sampling_area(transitions);
+            /*sample_area = sampling_area(transitions);
             count_area_sample(sample_area, transitions);
-            display_freq_pattern(sample_area);
+            display_freq_pattern(sample_area);*/
     }
     std::cout << "Execution time: " << elapsed_ms << "ms" << std::endl;
 
@@ -129,15 +130,15 @@ Transition choose_transition(PatternVector w) {
     }
 }
 
-//Algorithm 1 : Sampling by frequency, step 3 : make the final set
-PatternVector sampling_frequency(const std::vector<Transition> & transitions) {
+//Al//Algorithm 1 : Sampling by frequency, step 3 : make the final set
+PatternVector sampling_frequency(const std::vector<Transition> & transitions, int size_sample) {
     PatternVector weights;
     weights = calc_weight_transitions(transitions);
 
     PatternVector sample;
     bool exist = false;
 
-    for (int i = 0; i < transitions.size(); i++) {
+    for (int i = 0; i < size_sample; i++) {
         Transition choosen_t = choose_transition(weights);
         Transition subset_choosen_t = choose_subset_pattern(choosen_t);
         for (int j = 0; j < sample.size(); j++) {
@@ -156,10 +157,9 @@ PatternVector sampling_frequency(const std::vector<Transition> & transitions) {
 
     return sample;
 }
-
 //Algorithm 1 : Choose uniformaly a subset pattern of a transition
 Transition choose_subset_pattern(Transition pattern) {
-    Transition choosen_subset = {};
+    Transition choosen_subset;
 
     while (choosen_subset.size() == 0) {
         for (int i = 0; i < pattern.size(); i++) {
@@ -231,14 +231,14 @@ Transition choose_subset_pattern_2(Transition pattern, int k) {
 }
 
 //Algorithm 2 : Sampling by area, step 3 : make the final set
-PatternVector sampling_area(const std::vector<Transition> & transitions) {
+PatternVector sampling_area(const std::vector<Transition> & transitions, int size_sample) {
     PatternVector weights;
     weights = calc_weight_transitions_2(transitions);
 
     PatternVector sample;
     bool exist = false;
 
-    for (int i = 0; i < transitions.size(); i++) {
+    for (int i = 0; i < size_sample; i++) {
         Transition choosen_t = choose_transition(weights);
         int k = draw_k(choosen_t);
         Transition subset_choosen_t = choose_subset_pattern_2(choosen_t, k);
@@ -292,6 +292,7 @@ std::vector<Transition> convert_file_in_dataset(std::string nameFile) {
         std::string delimiter = " ";
         std::string e;
         size_t pos = 0;
+        int k = 0;
         while (getline(is, data_record)) {
             pos = 0;
             Transition transition;
@@ -299,9 +300,14 @@ std::vector<Transition> convert_file_in_dataset(std::string nameFile) {
                 e = data_record.substr(0, pos);
                 transition.push_back(std::stoi(e));
                 data_record.erase(0, pos + delimiter.length());
+
             }
+            k++;
             transitions.push_back(transition);
         }
+
+        std::cout << k << std::endl;
+
         return transitions;
     }
     else
@@ -338,7 +344,6 @@ std::vector<std::string> generate_transitions(const std::string & symbols,
 //Function to know if a pattern is into a transition
 bool contain_pattern(const Transition & transition,
                      const Transition & pattern) {
-
     if (transition.size() == 0) {
         return false;
     }
@@ -359,7 +364,7 @@ bool contain_pattern(const Transition & transition,
     return true;
 }
 
-//Display the std::vector freq_pattern
+//Display an std::vector of frequency or area
 void display_freq_pattern(const PatternVector & freq_pattern){
     for (unsigned i(0); i < freq_pattern.size(); ++i) {
         for (int j = 0; j < freq_pattern[i].first.size(); j++) {
